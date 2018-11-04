@@ -5,8 +5,6 @@ import android.support.v7.app.AppCompatActivity
 import android.util.Log
 import android.view.MenuItem
 import com.example.boris.musicdownloader.R
-import com.example.boris.musicdownloader.presentations.DiscoverFragment
-import com.example.boris.musicdownloader.presentations.SongLibraryFragment
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity() {
