@@ -1,7 +1,5 @@
 package com.example.boris.musicdownloader.services
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.*
 import android.media.AudioAttributes
@@ -11,7 +9,6 @@ import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
-import android.support.v4.app.NotificationCompat
 import android.support.v4.app.NotificationManagerCompat
 import android.support.v4.media.MediaBrowserCompat
 import android.support.v4.media.MediaBrowserServiceCompat
@@ -20,7 +17,6 @@ import android.support.v4.media.session.MediaButtonReceiver
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
-import com.example.boris.musicdownloader.R
 import com.example.boris.musicdownloader.data.SongRepository
 
 
@@ -30,7 +26,6 @@ class MusicPlaybackService : MediaBrowserServiceCompat(), MediaPlayer.OnPrepared
 
     private lateinit var service: MediaBrowserServiceCompat
     private lateinit var mMusicSessionCompact: MediaSessionCompat
-    private var playbackState: Boolean = false
     private val player by lazy {
         MediaPlayer().apply {
             setWakeMode(applicationContext, PowerManager.PARTIAL_WAKE_LOCK)
@@ -43,6 +38,7 @@ class MusicPlaybackService : MediaBrowserServiceCompat(), MediaPlayer.OnPrepared
         }
     }
     private val songRepository = SongRepository.instance
+    private lateinit var musicNotificationManager: MusicNotificationManager
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         MediaButtonReceiver.handleIntent(mMusicSessionCompact, intent)
@@ -68,6 +64,8 @@ class MusicPlaybackService : MediaBrowserServiceCompat(), MediaPlayer.OnPrepared
         }
 
         registerReceiver(mNoisyReceiver, IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY))
+
+        musicNotificationManager = MusicNotificationManagerImpl(this, mMusicSessionCompact)
     }
 
     override fun onDestroy() {
@@ -103,7 +101,6 @@ class MusicPlaybackService : MediaBrowserServiceCompat(), MediaPlayer.OnPrepared
     override fun onPrepared(mp: MediaPlayer?) {
         mMusicSessionCompact.isActive = true
         setMediaPlaybackState(PlaybackStateCompat.STATE_PLAYING)
-        buildForegroundNotification()
         mp?.start()
     }
 
@@ -137,7 +134,7 @@ class MusicPlaybackService : MediaBrowserServiceCompat(), MediaPlayer.OnPrepared
                     setDataSource(applicationContext, trackUri)
                     mMusicSessionCompact.setMetadata(MediaMetadataCompat.Builder()
                         .putString(MediaMetadataCompat.METADATA_KEY_DISPLAY_TITLE, song.title)
-                        .putString(MediaMetadataCompat.METADATA_KEY_ALBUM_ARTIST, song.artist)
+                        .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, song.artist)
                         .build())
                     prepareAsync()
                 } catch (e: Exception) {
@@ -153,7 +150,6 @@ class MusicPlaybackService : MediaBrowserServiceCompat(), MediaPlayer.OnPrepared
 
             player.pause()
             setMediaPlaybackState(PlaybackStateCompat.STATE_PAUSED)
-            buildForegroundNotification()
             service.stopForeground(false)
         }
 
@@ -194,79 +190,15 @@ class MusicPlaybackService : MediaBrowserServiceCompat(), MediaPlayer.OnPrepared
         val playbackstateBuilder = PlaybackStateCompat.Builder()
         if (state == PlaybackStateCompat.STATE_PLAYING) {
             playbackstateBuilder.setActions(PlaybackStateCompat.ACTION_PLAY_PAUSE or PlaybackStateCompat.ACTION_PAUSE)
-            playbackState = true
         } else {
             playbackstateBuilder.setActions(PlaybackStateCompat.ACTION_PLAY_PAUSE or PlaybackStateCompat.ACTION_PLAY)
-            playbackState = false
         }
         playbackstateBuilder.setState(state, PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN, 0f)
         mMusicSessionCompact.setPlaybackState(playbackstateBuilder.build())
-    }
-
-    private fun buildForegroundNotification() {
-        val controller = mMusicSessionCompact.controller
-        val context = this@MusicPlaybackService
-
-        val builder = NotificationCompat.Builder(context, MY_MUSIC_CHANNEL_ID).apply {
-            setSmallIcon(R.drawable.notification_music)
-            setContentTitle(songRepository.getCurSong().title)
-            setContentText(songRepository.getCurSong().artist)
-            setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            priority = NotificationCompat.PRIORITY_LOW
-            setDefaults(0)
-
-            setContentIntent(controller.sessionActivity)
-
-            setDeleteIntent(
-                MediaButtonReceiver.buildMediaButtonPendingIntent(
-                    context,
-                    PlaybackStateCompat.ACTION_STOP
-                )
-            )
-
-            if (playbackState) {
-                addAction(
-                    R.drawable.ic_pause, "pause",
-                    MediaButtonReceiver.buildMediaButtonPendingIntent(
-                        context,
-                        PlaybackStateCompat.ACTION_PAUSE
-                    )
-                )
-            } else {
-                addAction(
-                    R.drawable.ic_play, "play",
-                    MediaButtonReceiver.buildMediaButtonPendingIntent(
-                        context,
-                        PlaybackStateCompat.ACTION_PLAY
-                    )
-                )
-            }
-
-            setStyle(android.support.v4.media.app.NotificationCompat.MediaStyle()
-                .setShowActionsInCompactView(0)
-                .setMediaSession(sessionToken))
-        }
-
-        createNotificationChannel()
-        startForeground(1, builder.build())
-    }
-
-    private fun createNotificationChannel() {
-        // Create the NotificationChannel, but only on API 26+ because
-        // the NotificationChannel class is new and not in the support library
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = MY_MUSIC_CHANNEL_ID
-            val importance = NotificationManager.IMPORTANCE_LOW
-            val channel = NotificationChannel(MY_MUSIC_CHANNEL_ID, name, importance)
-            // Register the channel with the system
-            val notificationManager: NotificationManager =
-                getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            notificationManager.createNotificationChannel(channel)
-        }
+        musicNotificationManager.buildForegroundService(state)
     }
 
     companion object {
         private const val MY_MUSIC_ROOT_ID = "media_root_id"
-        private const val MY_MUSIC_CHANNEL_ID = "media_channel_id"
     }
 }
