@@ -73,15 +73,19 @@ class MusicPlaybackService : MediaBrowserServiceCompat(), MediaPlayer.OnPrepared
         player.stop()
         player.release()
         val am = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        val mFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN).run {
-            setAudioAttributes(AudioAttributes.Builder().run {
-                setUsage(AudioAttributes.USAGE_MEDIA)
-                setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val mFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN).run {
+                setAudioAttributes(AudioAttributes.Builder().run {
+                    setUsage(AudioAttributes.USAGE_MEDIA)
+                    setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    build()
+                })
                 build()
-            })
-            build()
+            }
+            am.abandonAudioFocusRequest(mFocusRequest)
+        } else {
+            am.abandonAudioFocus(afChangeListener)
         }
-        am.abandonAudioFocusRequest(mFocusRequest)
         unregisterReceiver(mNoisyReceiver)
         NotificationManagerCompat.from(this).cancel(1)
     }
@@ -172,17 +176,39 @@ class MusicPlaybackService : MediaBrowserServiceCompat(), MediaPlayer.OnPrepared
         }
     }
 
+    private val afChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->
+        when (focusChange) {
+            AudioManager.AUDIOFOCUS_LOSS -> {
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
+            }
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
+            }
+            AudioManager.AUDIOFOCUS_GAIN -> {
+            }
+        }
+    }
+
     private fun successfullyRetrievedAudioFocus(): Boolean {
         val am = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        val mFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN).run {
-            setAudioAttributes(AudioAttributes.Builder().run {
-                setUsage(AudioAttributes.USAGE_MEDIA)
-                setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                build()
-            })
-            build()
-        }
-        val result = am.requestAudioFocus(mFocusRequest)
+        val result: Int =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val mFocusRequest = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN).run {
+                    setAudioAttributes(AudioAttributes.Builder().run {
+                        setUsage(AudioAttributes.USAGE_MEDIA)
+                        setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                        build()
+                    })
+                    build()
+                }
+                am.requestAudioFocus(mFocusRequest)
+            } else {
+                am.requestAudioFocus(
+                    afChangeListener,
+                    AudioManager.STREAM_MUSIC,
+                    AudioManager.AUDIOFOCUS_GAIN
+                )
+            }
         return result == AudioManager.AUDIOFOCUS_GAIN
     }
 
