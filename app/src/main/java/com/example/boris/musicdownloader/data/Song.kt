@@ -21,18 +21,18 @@ class SongRepository {
         val musicCursor = context.contentResolver.query(
             musicUri, null, null, null, null)
 
-        Log.d(TAG, "music cursor count = ${musicCursor.count}")
-        if (musicCursor != null) {
+        Log.d(TAG, "music cursor count = ${musicCursor?.count ?: 0}")
+        musicCursor?.let {
             //get columns
             val idColumn = musicCursor.getColumnIndex(android.provider.MediaStore.Audio.Media._ID)
             val titleColumn = musicCursor.getColumnIndex(android.provider.MediaStore.Audio.Media.TITLE)
             val artistColumn = musicCursor.getColumnIndex(android.provider.MediaStore.Audio.Media.ARTIST)
             //add songs to list
             val songs = mutableListOf<Song>()
-            while (musicCursor.moveToNext()) {
-                val thisId = musicCursor.getLong(idColumn)
-                val thisTitle = musicCursor.getString(titleColumn)
-                val thisArtist = musicCursor.getString(artistColumn)
+            while (it.moveToNext()) {
+                val thisId = it.getLong(idColumn)
+                val thisTitle = it.getString(titleColumn)
+                val thisArtist = it.getString(artistColumn)
                 songs.add(Song(thisId, thisTitle, thisArtist))
             }
             songList = songs as ArrayList<Song>
