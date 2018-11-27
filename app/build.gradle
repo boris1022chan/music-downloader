@@ -21,6 +21,13 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+}
+
+repositories {
+    jcenter()
 }
 
 dependencies {
@@ -38,6 +45,9 @@ dependencies {
     implementation 'com.writingminds:FFmpegAndroid:0.3.2'
 
     testImplementation 'junit:junit:4.12'
+    testImplementation "org.mockito:mockito-core:2.+"
+    testImplementation 'org.mockito:mockito-inline:2.13.0'
+    testImplementation "com.nhaarman.mockitokotlin2:mockito-kotlin:2.0.0"
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
 

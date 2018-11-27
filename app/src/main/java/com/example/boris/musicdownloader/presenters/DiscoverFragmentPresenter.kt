@@ -1,6 +1,8 @@
 package com.example.boris.musicdownloader.presenters
 
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.os.AsyncTask
 import android.os.Environment
 import android.os.Environment.DIRECTORY_MUSIC
@@ -15,64 +17,88 @@ import com.github.axet.wget.SpeedInfo
 import com.github.axet.wget.info.DownloadInfo
 import com.github.hiteshsondhi88.libffmpeg.ExecuteBinaryResponseHandler
 import com.github.hiteshsondhi88.libffmpeg.FFmpeg
+import com.github.hiteshsondhi88.libffmpeg.LoadBinaryResponseHandler
 import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegCommandAlreadyRunningException
+import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegNotSupportedException
 import java.io.File
 import java.net.URL
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.regex.Pattern
-import com.github.hiteshsondhi88.libffmpeg.exceptions.FFmpegNotSupportedException
-import com.github.hiteshsondhi88.libffmpeg.LoadBinaryResponseHandler
-import android.content.Intent
-import android.net.Uri
 
 
 interface DiscoverFragmentPresenter {
     fun downloadButtonAction(input: String)
 }
 
-class DiscoverFragmentPresenterImpl(val view: DiscoverFragment): DiscoverFragmentPresenter {
+class DiscoverFragmentPresenterImpl(val view: DiscoverFragment) : DiscoverFragmentPresenter {
 
     // TODO: fix tag
     private val TAG = "DiscoverFragmentPresent"
 
     override fun downloadButtonAction(input: String) {
-        checkValidYoutubeUri(input)
-        downloadMusic(input)
+        val link = input.trim()
+        if (checkValidYoutubeUri(link)) {
+            val token = extractYoutubeId(link)
+            if (!token.isBlank()) {
+                Log.d("Boris", "converted: ${convertLinkFormat(token)}")
+                downloadMusic(convertLinkFormat(token))
+            }
+        }
     }
 
-    private fun checkValidYoutubeUri(uri: String): Boolean {
-        val pattern = Pattern.compile("")
+    fun checkValidYoutubeUri(uri: String): Boolean {
         val matcher = pattern.matcher(uri)
         Log.d(TAG, "link validity: ${matcher.matches()}")
         return matcher.matches()
     }
 
-    private fun downloadMusic(uri: String) {
+    fun extractYoutubeId(url: String): String {
+        val matcher = pattern.matcher(url)
+
+        if (matcher.find()) {
+            return matcher.group(2)
+        }
+        return ""
+    }
+
+    fun convertLinkFormat(token: String): String {
+        return "http://www.youtube.com/watch?v=$token"
+    }
+
+    private fun downloadMusic(link: String) {
         if (!view.haveWritePermission()) {
             view.requestPermission()
             return
         }
 
-        DownloadMusicTask(view.context!!).execute()
+        DownloadMusicTask(view.context!!).execute(URL(link))
     }
 
     private fun externalStorageAvail(): Boolean {
         return Environment.getExternalStorageState() == Environment.MEDIA_MOUNTED
+    }
+
+    companion object {
+        val pattern: Pattern by lazy { Pattern.compile("^http(s?)://(?:www\\.)?youtu(?:be\\.com/watch\\?v=|\\.be/)([\\w\\-_]*)(.*)") }
     }
 }
 
 
 private class DownloadMusicTask(
     private val mContext: Context
-): AsyncTask<URL, Unit, Unit>() {
+) : AsyncTask<URL, Unit, Unit>() {
 
     override fun doInBackground(vararg params: URL?) {
+        if (params[0] == null) {
+            Log.d("Boris", "link is not received")
+            return
+        }
+
+        Log.d("Boris", "start download")
+        val linkUrl = params[0]
+        val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
 
         try {
-            val sampleLink = "https://www.youtube.com/watch?v=fjfkg2XZ9x8"
-            val linkUrl = URL(sampleLink)
-            val path = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC)
-
             val user = VGet.parser(linkUrl)
             val videoInfo = user.info(linkUrl)
             val v = VGet(videoInfo, path)
