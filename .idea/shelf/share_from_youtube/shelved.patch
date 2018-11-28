@@ -1,0 +1,227 @@
+Index: app/src/main/java/com/example/boris/musicdownloader/presentations/DiscoverFragment.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.boris.musicdownloader.presentations\n\nimport android.Manifest\nimport android.content.pm.PackageManager\nimport android.os.Bundle\nimport android.os.Environment\nimport android.support.v4.app.ActivityCompat\nimport android.support.v4.app.Fragment\nimport android.support.v4.content.ContextCompat\nimport android.util.Log\nimport android.view.LayoutInflater\nimport android.view.View\nimport android.view.ViewGroup\nimport android.widget.Button\nimport android.widget.TextView\nimport com.example.boris.musicdownloader.R\nimport com.example.boris.musicdownloader.presenters.DiscoverFragmentPresenter\nimport com.example.boris.musicdownloader.presenters.DiscoverFragmentPresenterImpl\nimport java.io.File\nimport java.util.regex.Pattern\n\n\nclass DiscoverFragment : Fragment() {\n\n    private val TAG = \"DiscoverFragment\"\n    private val REQUEST_STORAGE = 123\n\n    private val presenter by lazy { DiscoverFragmentPresenterImpl(this) }\n    private lateinit var uriInput: TextView\n    private lateinit var downloadBtn: Button\n\n    override fun onCreateView(\n        inflater: LayoutInflater, container: ViewGroup?,\n        savedInstanceState: Bundle?\n    ): View? {\n        val v = inflater.inflate(R.layout.fragment_discover, container, false)\n\n        uriInput = v.findViewById(R.id.url_input)\n        downloadBtn = v.findViewById(R.id.download_button) as Button\n        downloadBtn.setOnClickListener {\n            presenter.downloadButtonAction(uriInput.text.toString())\n        }\n\n        return v\n    }\n\n    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {\n        when(requestCode) {\n            REQUEST_STORAGE -> {\n                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {\n                    presenter.downloadButtonAction(uriInput.text.toString())\n                }\n            }\n        }\n    }\n\n    fun haveWritePermission(): Boolean {\n        return (ActivityCompat.checkSelfPermission(context!!, Manifest.permission.WRITE_EXTERNAL_STORAGE)\n                == PackageManager.PERMISSION_GRANTED)\n    }\n\n    fun requestPermission() {\n        requestPermissions(\n            arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),\n            REQUEST_STORAGE\n        )\n    }\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/boris/musicdownloader/presentations/DiscoverFragment.kt	(revision 51fd10b31665ba02be97dc1253a1450a2bc55547)
++++ app/src/main/java/com/example/boris/musicdownloader/presentations/DiscoverFragment.kt	(date 1543378604356)
+@@ -3,10 +3,8 @@
+ import android.Manifest
+ import android.content.pm.PackageManager
+ import android.os.Bundle
+-import android.os.Environment
+ import android.support.v4.app.ActivityCompat
+ import android.support.v4.app.Fragment
+-import android.support.v4.content.ContextCompat
+ import android.util.Log
+ import android.view.LayoutInflater
+ import android.view.View
+@@ -14,10 +12,7 @@
+ import android.widget.Button
+ import android.widget.TextView
+ import com.example.boris.musicdownloader.R
+-import com.example.boris.musicdownloader.presenters.DiscoverFragmentPresenter
+ import com.example.boris.musicdownloader.presenters.DiscoverFragmentPresenterImpl
+-import java.io.File
+-import java.util.regex.Pattern
+ 
+ 
+ class DiscoverFragment : Fragment() {
+@@ -26,6 +21,8 @@
+     private val REQUEST_STORAGE = 123
+ 
+     private val presenter by lazy { DiscoverFragmentPresenterImpl(this) }
++    private var title: String = ""
++    private var link: String = ""
+     private lateinit var uriInput: TextView
+     private lateinit var downloadBtn: Button
+ 
+@@ -33,9 +30,15 @@
+         inflater: LayoutInflater, container: ViewGroup?,
+         savedInstanceState: Bundle?
+     ): View? {
++        arguments?.let {
++            title = it.getString("YOUTUBE_TITLE") ?: ""
++            link = it.getString("YOUTUBE_LINK") ?: ""
++            Log.d(TAG, "args: $title, $link")
++        }
+         val v = inflater.inflate(R.layout.fragment_discover, container, false)
+ 
+         uriInput = v.findViewById(R.id.url_input)
++        if (link.isNotBlank()) uriInput.text = link
+         downloadBtn = v.findViewById(R.id.download_button) as Button
+         downloadBtn.setOnClickListener {
+             presenter.downloadButtonAction(uriInput.text.toString())
+Index: app/src/main/java/com/example/boris/musicdownloader/presentations/ShareLinkIntentActivity.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/boris/musicdownloader/presentations/ShareLinkIntentActivity.kt	(date 1543378307389)
++++ app/src/main/java/com/example/boris/musicdownloader/presentations/ShareLinkIntentActivity.kt	(date 1543378307389)
+@@ -0,0 +1,32 @@
++package com.example.boris.musicdownloader.presentations
++
++import android.content.Intent
++import android.os.Bundle
++import android.support.v7.app.AppCompatActivity
++
++
++class ShareLinkIntentActivity : AppCompatActivity() {
++
++    private val TAG = "ShareLinkIntentActivity"
++
++    override fun onCreate(savedInstanceState: Bundle?) {
++        super.onCreate(savedInstanceState)
++
++        val bundle = intent.extras
++        val title: String = bundle?.getString("android.intent.extra.SUBJECT")?.trimForTitle() ?: ""
++        val sharedLink: String = bundle?.getString("android.intent.extra.TEXT") ?: ""
++
++        val intent = Intent(this, MainActivity::class.java).apply {
++            addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
++            putExtra("YOUTUBE_TITLE", title)
++            putExtra("YOUTUBE_LINK", sharedLink)
++        }
++        startActivity(intent)
++        finish()
++    }
++
++    private fun String.trimForTitle(): String {
++        val len = this.length
++        return this.substring(7, len - 12)
++    }
++}
+Index: app/src/main/AndroidManifest.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"utf-8\"?>\n<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\n          package=\"com.example.boris.musicdownloader\">\n\n    <uses-permission android:name=\"android.permission.INTERNET\" />\n    <uses-permission android:name=\"android.permission.WAKE_LOCK\" />\n    <uses-permission android:name=\"android.permission.READ_EXTERNAL_STORAGE\" />\n    <uses-permission android:name=\"android.permission.WRITE_EXTERNAL_STORAGE\" />\n\n    <application\n            android:name=\"android.support.multidex.MultiDexApplication\"\n            android:allowBackup=\"true\"\n            android:icon=\"@mipmap/ic_launcher\"\n            android:label=\"@string/app_name\"\n            android:roundIcon=\"@mipmap/ic_launcher_round\"\n            android:supportsRtl=\"true\"\n            android:theme=\"@style/AppTheme\">\n        <activity\n                android:name=\".presentations.MainActivity\"\n                android:launchMode=\"singleTop\"\n                android:screenOrientation=\"portrait\">\n            <intent-filter>\n                <action android:name=\"android.intent.action.MAIN\" />\n                <category android:name=\"android.intent.category.LAUNCHER\" />\n            </intent-filter>\n        </activity>\n\n        <service android:name=\".services.MusicPlaybackService\" >\n            <intent-filter>\n                <action android:name=\"android.media.browse.MediaBrowserService\" />\n                <action android:name=\"android.media.AUDIO_BECOMING_NOISY\" />\n                <action android:name=\"android.intent.action.MEDIA_BUTTON\" />\n            </intent-filter>\n        </service>\n\n        <receiver android:name=\"android.support.v4.media.session.MediaButtonReceiver\">\n            <intent-filter>\n                <action android:name=\"android.intent.action.MEDIA_BUTTON\" />\n                <action android:name=\"android.media.AUDIO_BECOMING_NOISY\" />\n            </intent-filter>\n        </receiver>\n    </application>\n</manifest>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/AndroidManifest.xml	(revision 51fd10b31665ba02be97dc1253a1450a2bc55547)
++++ app/src/main/AndroidManifest.xml	(date 1543378307373)
+@@ -2,10 +2,10 @@
+ <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+           package="com.example.boris.musicdownloader">
+ 
+-    <uses-permission android:name="android.permission.INTERNET" />
+-    <uses-permission android:name="android.permission.WAKE_LOCK" />
+-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
++    <uses-permission android:name="android.permission.INTERNET"/>
++    <uses-permission android:name="android.permission.WAKE_LOCK"/>
++    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
++    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+ 
+     <application
+             android:name="android.support.multidex.MultiDexApplication"
+@@ -20,24 +20,33 @@
+                 android:launchMode="singleTop"
+                 android:screenOrientation="portrait">
+             <intent-filter>
+-                <action android:name="android.intent.action.MAIN" />
+-                <category android:name="android.intent.category.LAUNCHER" />
++                <action android:name="android.intent.action.MAIN"/>
++                <category android:name="android.intent.category.LAUNCHER"/>
+             </intent-filter>
+         </activity>
+ 
+-        <service android:name=".services.MusicPlaybackService" >
++        <activity android:name=".presentations.ShareLinkIntentActivity">
++            <intent-filter>
++                <action android:name="android.intent.action.SEND"/>
++                <category android:name="android.intent.category.DEFAULT"/>
++                <data android:mimeType="text/plain"/>
++            </intent-filter>
++        </activity>
++
++        <service android:name=".services.MusicPlaybackService">
+             <intent-filter>
+-                <action android:name="android.media.browse.MediaBrowserService" />
+-                <action android:name="android.media.AUDIO_BECOMING_NOISY" />
+-                <action android:name="android.intent.action.MEDIA_BUTTON" />
++                <action android:name="android.media.browse.MediaBrowserService"/>
++                <action android:name="android.media.AUDIO_BECOMING_NOISY"/>
++                <action android:name="android.intent.action.MEDIA_BUTTON"/>
+             </intent-filter>
+         </service>
+ 
+         <receiver android:name="android.support.v4.media.session.MediaButtonReceiver">
+             <intent-filter>
+-                <action android:name="android.intent.action.MEDIA_BUTTON" />
+-                <action android:name="android.media.AUDIO_BECOMING_NOISY" />
++                <action android:name="android.intent.action.MEDIA_BUTTON"/>
++                <action android:name="android.media.AUDIO_BECOMING_NOISY"/>
+             </intent-filter>
+         </receiver>
+     </application>
++
+ </manifest>
+\ No newline at end of file
+Index: app/src/main/java/com/example/boris/musicdownloader/presentations/MainActivity.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>package com.example.boris.musicdownloader.presentations\n\nimport android.os.Bundle\nimport android.support.v7.app.AppCompatActivity\nimport android.util.Log\nimport android.view.MenuItem\nimport com.example.boris.musicdownloader.R\nimport kotlinx.android.synthetic.main.activity_main.*\n\nclass MainActivity : AppCompatActivity() {\n\n    private val TAG = \"MainActivity\"\n\n    private val discoveryFragment: DiscoverFragment by lazy { DiscoverFragment() }\n    private val songLibraryFragment: SongLibraryFragment by lazy { SongLibraryFragment() }\n\n    override fun onCreate(savedInstanceState: Bundle?) {\n        super.onCreate(savedInstanceState)\n        setContentView(R.layout.activity_main)\n\n        bottom_nav_view.setOnNavigationItemSelectedListener(bottomNavViewListener)\n\n        val fm = supportFragmentManager.beginTransaction()\n        fm.apply {\n            add(R.id.main_frame, discoveryFragment)\n            addToBackStack(null)\n            commit()\n        }\n    }\n\n    private val bottomNavViewListener: (menuItem: MenuItem) -> Boolean = { menuItem ->\n        val fm = supportFragmentManager.beginTransaction()\n        when (menuItem.itemId) {\n            R.id.discover_tab -> {\n                Log.d(TAG, \"discover tab pressed\")\n                fm.replace(R.id.main_frame, discoveryFragment)\n                fm.commit()\n            }\n            R.id.song_library_tab -> {\n                Log.d(TAG, \"song library tab pressed\")\n                fm.replace(R.id.main_frame, songLibraryFragment)\n                fm.commit()\n            }\n        }\n        true\n    }\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- app/src/main/java/com/example/boris/musicdownloader/presentations/MainActivity.kt	(revision 51fd10b31665ba02be97dc1253a1450a2bc55547)
++++ app/src/main/java/com/example/boris/musicdownloader/presentations/MainActivity.kt	(date 1543378604389)
+@@ -11,13 +11,21 @@
+ 
+     private val TAG = "MainActivity"
+ 
+-    private val discoveryFragment: DiscoverFragment by lazy { DiscoverFragment() }
++    private var discoveryFragment: DiscoverFragment = createDiscoverFragment()
+     private val songLibraryFragment: SongLibraryFragment by lazy { SongLibraryFragment() }
+ 
+     override fun onCreate(savedInstanceState: Bundle?) {
+         super.onCreate(savedInstanceState)
+         setContentView(R.layout.activity_main)
+ 
++        if (savedInstanceState == null) {
++            intent.extras?.let {
++                val youtubeTitle = it.getString("YOUTUBE_TITLE") ?: ""
++                val youtubeLink = it.getString("YOUTUBE_LINK") ?: ""
++                discoveryFragment = createDiscoverFragment(youtubeTitle, youtubeLink)
++            }
++        }
++
+         bottom_nav_view.setOnNavigationItemSelectedListener(bottomNavViewListener)
+ 
+         val fm = supportFragmentManager.beginTransaction()
+@@ -44,4 +52,13 @@
+         }
+         true
+     }
++
++    private fun createDiscoverFragment(title: String = "", link: String = ""): DiscoverFragment {
++        if (title.isBlank() && link.isBlank()) return DiscoverFragment()
++        val bundle = Bundle().apply {
++            putString("YOUTUBE_TITLE", title)
++            putString("YOUTUBE_LINK", link)
++        }
++        return DiscoverFragment().apply { arguments = bundle }
++    }
+ }
+Index: .idea/misc.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project version=\"4\">\n  <component name=\"NullableNotNullManager\">\n    <option name=\"myDefaultNullable\" value=\"android.support.annotation.Nullable\" />\n    <option name=\"myDefaultNotNull\" value=\"android.support.annotation.NonNull\" />\n    <option name=\"myNullables\">\n      <value>\n        <list size=\"7\">\n          <item index=\"0\" class=\"java.lang.String\" itemvalue=\"org.jetbrains.annotations.Nullable\" />\n          <item index=\"1\" class=\"java.lang.String\" itemvalue=\"javax.annotation.Nullable\" />\n          <item index=\"2\" class=\"java.lang.String\" itemvalue=\"javax.annotation.CheckForNull\" />\n          <item index=\"3\" class=\"java.lang.String\" itemvalue=\"edu.umd.cs.findbugs.annotations.Nullable\" />\n          <item index=\"4\" class=\"java.lang.String\" itemvalue=\"android.support.annotation.Nullable\" />\n          <item index=\"5\" class=\"java.lang.String\" itemvalue=\"androidx.annotation.Nullable\" />\n          <item index=\"6\" class=\"java.lang.String\" itemvalue=\"androidx.annotation.RecentlyNullable\" />\n        </list>\n      </value>\n    </option>\n    <option name=\"myNotNulls\">\n      <value>\n        <list size=\"6\">\n          <item index=\"0\" class=\"java.lang.String\" itemvalue=\"org.jetbrains.annotations.NotNull\" />\n          <item index=\"1\" class=\"java.lang.String\" itemvalue=\"javax.annotation.Nonnull\" />\n          <item index=\"2\" class=\"java.lang.String\" itemvalue=\"edu.umd.cs.findbugs.annotations.NonNull\" />\n          <item index=\"3\" class=\"java.lang.String\" itemvalue=\"android.support.annotation.NonNull\" />\n          <item index=\"4\" class=\"java.lang.String\" itemvalue=\"androidx.annotation.NonNull\" />\n          <item index=\"5\" class=\"java.lang.String\" itemvalue=\"androidx.annotation.RecentlyNonNull\" />\n        </list>\n      </value>\n    </option>\n  </component>\n  <component name=\"ProjectRootManager\" version=\"2\" languageLevel=\"JDK_1_8\" project-jdk-name=\"1.8\" project-jdk-type=\"JavaSDK\">\n    <output url=\"file://$PROJECT_DIR$/build/classes\" />\n  </component>\n  <component name=\"ProjectType\">\n    <option name=\"id\" value=\"Android\" />\n  </component>\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- .idea/misc.xml	(revision 51fd10b31665ba02be97dc1253a1450a2bc55547)
++++ .idea/misc.xml	(date 1543371058709)
+@@ -29,7 +29,7 @@
+       </value>
+     </option>
+   </component>
+-  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_8" project-jdk-name="1.8" project-jdk-type="JavaSDK">
++  <component name="ProjectRootManager" version="2" languageLevel="JDK_1_7" project-jdk-name="1.8" project-jdk-type="JavaSDK">
+     <output url="file://$PROJECT_DIR$/build/classes" />
+   </component>
+   <component name="ProjectType">

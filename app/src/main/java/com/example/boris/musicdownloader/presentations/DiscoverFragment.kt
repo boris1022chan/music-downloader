@@ -3,10 +3,8 @@ package com.example.boris.musicdownloader.presentations
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.Environment
 import android.support.v4.app.ActivityCompat
 import android.support.v4.app.Fragment
-import android.support.v4.content.ContextCompat
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -14,10 +12,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
 import com.example.boris.musicdownloader.R
-import com.example.boris.musicdownloader.presenters.DiscoverFragmentPresenter
 import com.example.boris.musicdownloader.presenters.DiscoverFragmentPresenterImpl
-import java.io.File
-import java.util.regex.Pattern
 
 
 class DiscoverFragment : Fragment() {
@@ -26,6 +21,8 @@ class DiscoverFragment : Fragment() {
     private val REQUEST_STORAGE = 123
 
     private val presenter by lazy { DiscoverFragmentPresenterImpl(this) }
+    private var title: String = ""
+    private var link: String = ""
     private lateinit var uriInput: TextView
     private lateinit var downloadBtn: Button
 
@@ -33,9 +30,15 @@ class DiscoverFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        arguments?.let {
+            title = it.getString("YOUTUBE_TITLE") ?: ""
+            link = it.getString("YOUTUBE_LINK") ?: ""
+            Log.d(TAG, "args: $title, $link")
+        }
         val v = inflater.inflate(R.layout.fragment_discover, container, false)
 
         uriInput = v.findViewById(R.id.url_input)
+        if (link.isNotBlank()) uriInput.text = link
         downloadBtn = v.findViewById(R.id.download_button) as Button
         downloadBtn.setOnClickListener {
             presenter.downloadButtonAction(uriInput.text.toString())

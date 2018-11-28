@@ -11,19 +11,27 @@ class MainActivity : AppCompatActivity() {
 
     private val TAG = "MainActivity"
 
-    private val discoveryFragment: DiscoverFragment by lazy { DiscoverFragment() }
+    private var discoveryFragment: DiscoverFragment = createDiscoverFragment()
     private val songLibraryFragment: SongLibraryFragment by lazy { SongLibraryFragment() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        if (savedInstanceState == null) {
+            intent.extras?.let {
+                val youtubeTitle = it.getString("YOUTUBE_TITLE") ?: ""
+                val youtubeLink = it.getString("YOUTUBE_LINK") ?: ""
+                discoveryFragment = createDiscoverFragment(youtubeTitle, youtubeLink)
+            }
+        }
+
         bottom_nav_view.setOnNavigationItemSelectedListener(bottomNavViewListener)
 
         val fm = supportFragmentManager.beginTransaction()
         fm.apply {
             add(R.id.main_frame, discoveryFragment)
-            addToBackStack(null)
+            disallowAddToBackStack()
             commit()
         }
     }
@@ -43,5 +51,14 @@ class MainActivity : AppCompatActivity() {
             }
         }
         true
+    }
+
+    private fun createDiscoverFragment(title: String = "", link: String = ""): DiscoverFragment {
+        if (title.isBlank() && link.isBlank()) return DiscoverFragment()
+        val bundle = Bundle().apply {
+            putString("YOUTUBE_TITLE", title)
+            putString("YOUTUBE_LINK", link)
+        }
+        return DiscoverFragment().apply { arguments = bundle }
     }
 }
