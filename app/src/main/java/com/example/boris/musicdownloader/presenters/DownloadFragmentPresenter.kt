@@ -7,7 +7,7 @@ import android.os.AsyncTask
 import android.os.Environment
 import android.os.Environment.DIRECTORY_MUSIC
 import android.util.Log
-import com.example.boris.musicdownloader.presentations.DiscoverFragment
+import com.example.boris.musicdownloader.presentations.DownloadFragment
 import com.github.axet.vget.VGet
 import com.github.axet.vget.info.VideoFileInfo
 import com.github.axet.vget.info.VideoInfo
@@ -26,11 +26,11 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.regex.Pattern
 
 
-interface DiscoverFragmentPresenter {
+interface DownloadFragmentPresenter {
     fun downloadButtonAction(input: String)
 }
 
-class DiscoverFragmentPresenterImpl(val view: DiscoverFragment) : DiscoverFragmentPresenter {
+class DownloadFragmentPresenterImpl(val view: DownloadFragment) : DownloadFragmentPresenter {
 
     // TODO: fix tag
     private val TAG = "DiscoverFragmentPresent"

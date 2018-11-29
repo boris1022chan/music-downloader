@@ -4,7 +4,7 @@ import com.nhaarman.mockitokotlin2.mock
 import org.junit.Assert
 import org.junit.Test
 
-class DiscoverFragmentPresenterImplTest {
+class DownloadFragmentPresenterImplTest {
 
     private var presenter: DiscoverFragmentPresenterImpl = DiscoverFragmentPresenterImpl(mock())
 
