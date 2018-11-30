@@ -19,11 +19,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        var loadDownloadFragment: Boolean = false
         if (savedInstanceState == null) {
             intent.extras?.let {
                 val youtubeTitle = it.getString("YOUTUBE_TITLE") ?: ""
                 val youtubeLink = it.getString("YOUTUBE_LINK") ?: ""
                 downloadFragment = createDownloadFragment(youtubeTitle, youtubeLink)
+                loadDownloadFragment = true
             }
         }
 
@@ -31,7 +33,8 @@ class MainActivity : AppCompatActivity() {
 
         val fm = supportFragmentManager.beginTransaction()
         fm.apply {
-            add(R.id.main_frame, discoverFragment)
+            add(R.id.main_frame,
+                if (loadDownloadFragment) downloadFragment else discoverFragment)
             disallowAddToBackStack()
             commit()
         }
