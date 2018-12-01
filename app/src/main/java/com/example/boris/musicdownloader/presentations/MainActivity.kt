@@ -1,5 +1,6 @@
 package com.example.boris.musicdownloader.presentations
 
+import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.util.Log
@@ -19,25 +20,24 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        var loadDownloadFragment: Boolean = false
-        if (savedInstanceState == null) {
-            intent.extras?.let {
-                val youtubeTitle = it.getString("YOUTUBE_TITLE") ?: ""
-                val youtubeLink = it.getString("YOUTUBE_LINK") ?: ""
-                downloadFragment = createDownloadFragment(youtubeTitle, youtubeLink)
-                loadDownloadFragment = true
-            }
-        }
-
         bottom_nav_view.setOnNavigationItemSelectedListener(bottomNavViewListener)
 
         val fm = supportFragmentManager.beginTransaction()
         fm.apply {
-            add(R.id.main_frame,
-                if (loadDownloadFragment) downloadFragment else discoverFragment)
+            replace(R.id.main_frame, discoverFragment)
             disallowAddToBackStack()
             commit()
         }
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        handleShareIntent(intent)
     }
 
     private val bottomNavViewListener: (menuItem: MenuItem) -> Boolean = { menuItem ->
@@ -69,5 +69,23 @@ class MainActivity : AppCompatActivity() {
             putString("YOUTUBE_LINK", link)
         }
         return DownloadFragment().apply { arguments = bundle }
+    }
+
+    private fun handleShareIntent(intent: Intent?) {
+        intent?.extras?.let {
+            val youtubeTitle = it.getString("YOUTUBE_TITLE") ?: ""
+            val youtubeLink = it.getString("YOUTUBE_LINK") ?: ""
+
+            if (youtubeLink.isBlank()) return
+            downloadFragment = createDownloadFragment(youtubeTitle, youtubeLink)
+
+            val fm = supportFragmentManager.beginTransaction()
+            fm.apply {
+                replace(R.id.main_frame, downloadFragment)
+                bottom_nav_view.selectedItemId = R.id.download_tab
+                disallowAddToBackStack()
+                commit()
+            }
+        }
     }
 }
