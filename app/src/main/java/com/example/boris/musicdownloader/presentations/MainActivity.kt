@@ -3,6 +3,7 @@ package com.example.boris.musicdownloader.presentations
 import android.content.Intent
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.Toolbar
 import android.util.Log
 import android.view.MenuItem
 import com.example.boris.musicdownloader.R
@@ -20,6 +21,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        val toolbar: Toolbar = findViewById(R.id.top_toolbar)
+        setSupportActionBar(toolbar)
+        toolbar.title = "Music Downloader"
         bottom_nav_view.setOnNavigationItemSelectedListener(bottomNavViewListener)
 
         val fm = supportFragmentManager.beginTransaction()
