@@ -9,6 +9,7 @@ import android.view.*
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import com.example.boris.musicdownloader.R
+import com.example.boris.musicdownloader.utils.YoutubeUtil
 
 
 class DiscoverFragment : Fragment() {
@@ -55,10 +56,13 @@ class DiscoverFragment : Fragment() {
     }
 
     private fun downloadOptionAction() {
-        Log.d(TAG, "download option clicked: ${discoverContentWebView.url}")
+        val link = YoutubeUtil.convertMobileToStandard(discoverContentWebView.url)
+        if (link.isBlank()) return
+
+        Log.d(TAG, "download option clicked: $link")
         val intent = Intent(activity, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT)
-            putExtra("YOUTUBE_LINK", discoverContentWebView.url)
+            putExtra("YOUTUBE_LINK", link)
         }
         startActivity(intent)
     }

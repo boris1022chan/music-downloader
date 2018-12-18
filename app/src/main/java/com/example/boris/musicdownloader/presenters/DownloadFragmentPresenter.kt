@@ -8,6 +8,7 @@ import android.os.Environment
 import android.os.Environment.DIRECTORY_MUSIC
 import android.util.Log
 import com.example.boris.musicdownloader.presentations.DownloadFragment
+import com.example.boris.musicdownloader.utils.YoutubeUtil
 import com.github.axet.vget.VGet
 import com.github.axet.vget.info.VideoFileInfo
 import com.github.axet.vget.info.VideoInfo
@@ -37,28 +38,13 @@ class DownloadFragmentPresenterImpl(val view: DownloadFragment) : DownloadFragme
 
     override fun downloadButtonAction(input: String) {
         val link = input.trim()
-        if (checkValidYoutubeUri(link)) {
-            val token = extractYoutubeId(link)
+        if (YoutubeUtil.checkValidYoutubeUri(link)) {
+            val token = YoutubeUtil.extractYoutubeId(link)
             if (!token.isBlank()) {
                 Log.d("Boris", "converted: ${convertLinkFormat(token)}")
                 downloadMusic(convertLinkFormat(token))
             }
         }
-    }
-
-    fun checkValidYoutubeUri(uri: String): Boolean {
-        val matcher = pattern.matcher(uri)
-        Log.d(TAG, "link validity: ${matcher.matches()}")
-        return matcher.matches()
-    }
-
-    fun extractYoutubeId(url: String): String {
-        val matcher = pattern.matcher(url)
-
-        if (matcher.find()) {
-            return matcher.group(2)
-        }
-        return ""
     }
 
     fun convertLinkFormat(token: String): String {
