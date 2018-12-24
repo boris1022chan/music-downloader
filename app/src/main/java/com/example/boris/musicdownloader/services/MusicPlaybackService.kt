@@ -17,7 +17,7 @@ import android.support.v4.media.session.MediaButtonReceiver
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
-import com.example.boris.musicdownloader.data.SongRepository
+import com.example.boris.musicdownloader.entities.SongRepository
 
 
 class MusicPlaybackService : MediaBrowserServiceCompat(), MediaPlayer.OnPreparedListener, AudioManager.OnAudioFocusChangeListener {

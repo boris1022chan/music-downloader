@@ -6,7 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import com.example.boris.musicdownloader.R
-import com.example.boris.musicdownloader.data.Song
+import com.example.boris.musicdownloader.entities.Song
 
 class SongListAdapter(
     private val parent: SongLibraryFragment

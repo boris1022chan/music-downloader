@@ -1,4 +1,4 @@
-package com.example.boris.musicdownloader.data
+package com.example.boris.musicdownloader.entities
 
 import android.content.Context
 import android.net.Uri
