@@ -11,3 +11,12 @@ or
 1. Clone the project
 2. Open in Android Studio
 3. Build and Run the project on your device
+
+## Getting Music
+You can either download directly from the app using the toolbar icon <br>
+<img src="https://drive.google.com/uc?export=view&id=1KG-Z8sbp5iiHnEt7YOrQdF4NWPQglax1" alt="drawing" width="200"/>
+
+Or share to Music Downloader app from the YouTube app <br>
+<img src="https://drive.google.com/uc?export=view&id=1o-fAN5phHY23IomG1A3Ghwx8HxBfzXlA" alt="drawing" width="200"/>
+
+Once download is finished, the song should appear in the 'Library' tab
