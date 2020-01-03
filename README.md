@@ -1,4 +1,4 @@
-# MusicDownloader
+# Music Downloader
 This project is motivated by the amount of time I spent on Youtube searching for music. I want a one click mechanism on my phone so that I can save the music for offline uses.
 
 ## Getting Started
